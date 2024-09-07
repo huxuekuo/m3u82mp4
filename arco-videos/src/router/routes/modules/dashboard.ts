@@ -22,6 +22,16 @@ const DASHBOARD: AppRouteRecordRaw = {
         roles: ['*'],
       },
     },
+    {
+      path: 'query',
+      name: 'query',
+      component: () => import('@/views/query/index.vue'),
+      meta: {
+        locale: 'menu.query',
+        requiresAuth: true,
+        roles: ['*'],
+      },
+    },
   ],
 };
 

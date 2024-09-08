@@ -14,32 +14,55 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 1. [必须]接受指定域的请求，可以使用*不加以限制，但不安全
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		// w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		// 2. [必须]设置服务器支持的所有跨域请求的方法
+		w.Header().Set("Access-Control-Allow-Methods", "POST,GET,PUT,DELETE,OPTIONS")
+		// 3. [可选]服务器支持的所有头信息字段，不限于浏览器在"预检"中请求的字段
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Content-Length,Token")
+		// 4. [可选]设置XMLHttpRequest的响应对象能拿到的额外字段
+		w.Header().Set("Access-Control-Expose-Headers", "Access-Control-Allow-Headers,Token")
+		// 5. [可选]是否允许后续请求携带认证信息Cookir，该值只能是true，不需要则不设置
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func query(w http.ResponseWriter, r *http.Request) {
+	key := r.FormValue("key")
+	other_kkk217 := "http://xdm530.com"
+	w.Header().Set("Content-Type", "application/json")
+	// 第一次 URL 编码
+	encodedStr := url.QueryEscape(other_kkk217)
+
+	// 将编码后的字符串中的 '%' 替换为 '%25'
+	encodedStr = strings.Replace(encodedStr, "%", "%25", -1)
+
+	// 第二次 URL 编码
+	doubleEncodedStr := url.QueryEscape(encodedStr)
+	resp, err := http.Get(fmt.Sprintf("http://119.29.226.140:13457/ssszz.php?top=10&q=%s&other_kkk217=%s&dect=0", url.QueryEscape(key), doubleEncodedStr))
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	bytedata, err := io.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+	// var rs []map[string]any
+	// dataStr := string(bytedata)
+	// dataStr = strings.TrimSpace(dataStr)
+	// json.Unmarshal(bytedata, &rs)
+	w.Write(bytedata)
+	// json.NewEncoder(w).Encode()
+}
+
 // 119.29.226.140:13457 172.247.47.125
 func main() {
-	http.HandleFunc("/query", func(w http.ResponseWriter, r *http.Request) {
-		key := r.FormValue("key")
-		other_kkk217 := "http://xdm530.com"
-
-		// 第一次 URL 编码
-		encodedStr := url.QueryEscape(other_kkk217)
-
-		// 将编码后的字符串中的 '%' 替换为 '%25'
-		encodedStr = strings.Replace(encodedStr, "%", "%25", -1)
-
-		// 第二次 URL 编码
-		doubleEncodedStr := url.QueryEscape(encodedStr)
-		resp, err := http.Get(fmt.Sprintf("http://119.29.226.140:13457/ssszz.php?top=10&q=%s&other_kkk217=%s&dect=0", url.QueryEscape(key), doubleEncodedStr))
-		if err != nil {
-			panic(err)
-		}
-		defer resp.Body.Close()
-		bytedata, err := io.ReadAll(resp.Body)
-		if err != nil {
-			panic(err)
-		}
-		w.Write(bytedata)
-
-	})
+	http.Handle("/query", corsMiddleware(http.HandlerFunc(query)))
 	http.HandleFunc("/getInfo", func(w http.ResponseWriter, r *http.Request) {
 		urls := r.FormValue("url")
 		host := "http://xdm530.com"
@@ -95,5 +118,6 @@ func main() {
 		}
 
 	})
+
 	http.ListenAndServe(":8080", nil)
 }

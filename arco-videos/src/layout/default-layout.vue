@@ -1,11 +1,12 @@
 <template>
-  <a-layout class="layout" :class="{ mobile: appStore.hideMenu }">
-    <div v-if="navbar" class="layout-navbar">
-      <NavBar />
-    </div>
+  <!-- a -->
+  <!-- <a-layout class="layout" :class="{ mobile: appStore.hideMenu }">
+    <div v-if="navbar" class="layout-navbar"> -->
+      <!-- <NavBar /> -->
+    <!-- </div>
     <a-layout>
-      <a-layout>
-        <a-layout-sider
+      <a-layout> -->
+        <!-- <a-layout-sider
           v-if="renderMenu"
           v-show="!hideMenu"
           class="layout-sider"
@@ -16,12 +17,12 @@
           :style="{ paddingTop: navbar ? '60px' : '' }"
           :hide-trigger="true"
           @collapse="setCollapsed"
-        >
-          <div class="menu-wrapper">
+        > -->
+          <!-- <div class="menu-wrapper">
             <Menu />
-          </div>
-        </a-layout-sider>
-        <a-drawer
+          </div> -->
+        <!-- </a-layout-sider> -->
+        <!-- <a-drawer
           v-if="hideMenu"
           :visible="drawerVisible"
           placement="left"
@@ -30,18 +31,19 @@
           :closable="false"
           @cancel="drawerCancel"
         >
-          <Menu />
-        </a-drawer>
-        <a-layout class="layout-content" :style="paddingStyle">
+          <Menu /> -->
+        <!-- </a-drawer> -->
+        <!-- <a-layout class="layout-content" :style="paddingStyle">
           <TabBar v-if="appStore.tabBar" />
           <a-layout-content>
-            <PageLayout />
-          </a-layout-content>
-          <Footer v-if="footer" />
-        </a-layout>
+            
+          </a-layout-content> -->
+          <PageLayout />
+          <!-- <Footer v-if="footer" /> -->
+        <!-- </a-layout>
       </a-layout>
     </a-layout>
-  </a-layout>
+  </a-layout> -->
 </template>
 
 <script lang="ts" setup>

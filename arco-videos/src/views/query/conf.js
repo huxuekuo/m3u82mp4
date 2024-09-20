@@ -5,7 +5,7 @@ export const conf = {
      * */
     id: 'xgPlayerWrap', // 占位dom元素
     width: 600, height: 400, // 视频宽高尺寸
-    url: 'https://svipsvip.ffzy-online5.com/20240907/32249_524e7d08/index.m3u8', // 视频源
+    // url: 'https://svipsvip.ffzy-online5.com/20240907/32249_524e7d08/index.m3u8', // 视频源
     poster: "http://ashuai.work/static/img/avantar.png", // 视频封面
     autoplay: false, // 是否自动播放，不自动播放，浏览器有限制规则
     autoplayMuted: false, // 是否自动播放（静音播放）
@@ -53,10 +53,10 @@ export const conf = {
     controls: true, // 是否使用底部控制栏，默认使用
     miniprogress: true, // 是否使用mini进度条（当底部控制栏隐藏时生效）
     screenShot: false, // 关闭截图功能
-    rotate: true, // 是否使用视频旋转插件，默认不使用
-    download: true, // 是否使用下载按钮，一般不用，一般自定义控制
-    pip: true, // 使用使用画中画模式，默认不用
-    mini: true, // 是否使用小屏幕控件
+    rotate: false, // 是否使用视频旋转插件，默认不使用
+    download: false, // 是否使用下载按钮，一般不用，一般自定义控制
+    pip: false, // 使用使用画中画模式，默认不用
+    mini: false, // 是否使用小屏幕控件
     cssFullscreen: true, // 是否使用网页样式全屏按钮开关
     playbackRate: [0.5, 1, 1.5, 2, 3], //传入倍速可选数组
     // playbackRate: true, //false，禁用倍速播放（即控制栏不显示）

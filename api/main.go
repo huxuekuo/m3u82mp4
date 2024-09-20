@@ -1,18 +1,21 @@
 package main
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"m3u82mp4/consts"
+	"m3u82mp4/library"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
-	"github.com/chromedp/cdproto/cdp"
-	"github.com/chromedp/chromedp"
+	"go.uber.org/zap"
 )
+
+var logger *zap.Logger
 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -31,6 +34,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// 119.29.226.140:13457 172.247.47.125
 func query(w http.ResponseWriter, r *http.Request) {
 	key := r.FormValue("key")
 	other_kkk217 := "http://xdm530.com"
@@ -52,72 +56,95 @@ func query(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	// var rs []map[string]any
-	// dataStr := string(bytedata)
-	// dataStr = strings.TrimSpace(dataStr)
-	// json.Unmarshal(bytedata, &rs)
 	w.Write(bytedata)
-	// json.NewEncoder(w).Encode()
 }
 
-// 119.29.226.140:13457 172.247.47.125
+func getInfoV2(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	keyword := r.FormValue("url")
+	resp, err := http.Get("http://v.58hda.com:8077/ne2/s" + keyword + ".js")
+	if err != nil {
+		logger.Error("request info err", zap.Error(err))
+		return
+	}
+	defer resp.Body.Close()
+	allbyte, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Error("read all err", zap.Error(err))
+		return
+	}
+	redisClint := library.NewRedis()
+	reg := regexp.MustCompile(`(\w+)\[(\d+)\]=\"(.*)\"`)
+	res := make(map[string]map[string]any, 0)
+	allline := strings.Split(string(allbyte), ";")
+	for _, v := range allline {
+		if !strings.Contains(v, "http") && !strings.Contains(v, "https") {
+			continue
+		}
+		matches := reg.FindStringSubmatch(v)
+		if len(matches) == 4 {
+			key := fmt.Sprintf("%s", matches[1]) // 不包含数组索引
+			value := matches[3]
+
+			v, ok := res[key]
+			if !ok {
+				v = make(map[string]any, 0)
+				v["list"] = make([]map[string]string, 0)
+				v["info"] = map[string]string{
+					"play": "0",
+				}
+				res[key] = v
+			}
+			list := v["list"].([]map[string]string)
+			item := make(map[string]string)
+			content := strings.Split(value, ",")
+			item["url"] = content[0]
+			item["name"] = content[len(content)-1]
+			item["play"] = "0"
+			list = append(list, item)
+			v["list"] = list
+			redisKey := fmt.Sprintf(consts.REDIS_USER_TELEPLAY, keyword)
+			RedisRes := redisClint.Get(r.Context(), redisKey)
+			if RedisRes.Err() == nil {
+				val, _ := RedisRes.Result()
+				splits := strings.Split(val, ",")
+				if len(splits) > 1 && splits[0] == key && splits[1] == item["name"] {
+					item["play"] = "1"
+					infoMap := v["info"].(map[string]string)
+					infoMap["play"] = "1"
+				}
+
+			}
+		}
+	}
+
+	delete(res, "playarr")
+	json.NewEncoder(w).Encode(res)
+}
+
+// 播放记录
+func PlayRecord(w http.ResponseWriter, r *http.Request) {
+	index := r.FormValue("index")
+	teleplay := r.FormValue("teleplay")
+	name := r.FormValue("name")
+	redisKey := fmt.Sprintf(consts.REDIS_USER_TELEPLAY, teleplay)
+	logger.Sugar().Info(redisKey)
+	statice := library.NewRedis().SetEX(r.Context(), redisKey, fmt.Sprintf("%s,%s", index, name), time.Hour*24*60)
+	if statice.Err() != nil {
+		logger.Error("redis play record err", zap.Error(statice.Err()))
+	}
+	res := map[string]string{
+		"msg": "OK",
+	}
+	json.NewEncoder(w).Encode(res)
+}
 func main() {
+	logger, _ = zap.NewProduction()
 	http.Handle("/query", corsMiddleware(http.HandlerFunc(query)))
-	http.HandleFunc("/getInfo", func(w http.ResponseWriter, r *http.Request) {
-		urls := r.FormValue("url")
-		host := "http://xdm530.com"
-		newHostUrl := host + urls
-		// 禁用chrome headless
-		opts := append(chromedp.DefaultExecAllocatorOptions[:],
-			chromedp.Flag("headless", true),
-		)
-		allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
-		defer cancel()
-		ctx, cancel := chromedp.NewContext(
-			allocCtx,
-		)
-		defer cancel()
-		ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
-		defer cancel()
-		var onClick []*cdp.Node
-		var aNodes []*cdp.Node
-		err := chromedp.Run(ctx, chromedp.Navigate(newHostUrl),
-			chromedp.WaitVisible("#tab12"),
-			chromedp.Nodes("body > div.wrap > div.taba-down.mb.clearfix > div.pfrom.tab1.clearfix > #play_list_34", &onClick),
-			chromedp.Nodes(":is(a)", &aNodes, chromedp.ByQueryAll))
-
-		if err != nil {
-			log.Fatal(err)
-		}
-		line := make(map[string]string, len(onClick[0].Children))
-		for _, v := range onClick[0].Children {
-			onClick, exits := v.Attribute("onclick")
-			if exits {
-				line[v.Children[0].NodeValue] = strings.Split(onClick, ",")[2]
-			}
-		}
-		fmt.Printf("%+v\n", line)
-		episodes := make(map[string]string, 0)
-		for _, node := range aNodes {
-			href, b := node.Attribute("href")
-			if b && strings.Contains(href, "html") {
-				if strings.Contains(href, "kb") {
-					fmt.Println("debug")
-				}
-				queryParse, err := url.Parse(href)
-				if err != nil {
-					continue
-				}
-				qp := queryParse.Query().Get("qp")
-				if qp == "" {
-					episodes["default"] = href
-				} else {
-					episodes[qp] = href
-				}
-			}
-		}
-
-	})
-
-	http.ListenAndServe(":8080", nil)
+	http.Handle("/getInfoV2", corsMiddleware(http.HandlerFunc(getInfoV2)))
+	http.Handle("/playRecord", corsMiddleware(http.HandlerFunc(PlayRecord)))
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		logger.Error("run server error", zap.Error(err))
+	}
 }

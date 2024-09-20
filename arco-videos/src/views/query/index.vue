@@ -1,5 +1,5 @@
 <template>
-     <!-- <div id="xgPlayerWrap"></div> -->
+     
   <a-grid :cols="3" :colGap="12" :rowGap="30" class="grid-demo-grid" :collapsed="collapsed">
     <a-grid-item class="demo-item" :offset="1"></a-grid-item>
     <a-grid-item class="demo-item" :offset="1"></a-grid-item>
@@ -7,7 +7,7 @@
     <a-grid-item class="demo-item" :offset="1"></a-grid-item>
     <a-grid-item class="demo-item" :offset="1"></a-grid-item>
     <a-grid-item class="demo-item" :span="2">
-        <a-input v-model="queryKey"  placeholder="请输入剧名，开启奇妙之旅" class="input-rounded " @press-enter="log"/>
+        <a-input v-model="queryKey"  placeholder="请输入剧名，开启奇妙之旅" class="input-rounded" @press-enter="log"/>
     </a-grid-item>
   </a-grid>
 <br/>
@@ -29,7 +29,8 @@
           连载至：{{x.lianzaijs}}集<br/>
         </template>
     </a-card-meta>
-    <a-link :href="`http://xdm530.com${x.url}`">进入详情</a-link>
+    <!-- <a-link :href="`http://xdm530.com${x.url}`">进入详情</a-link> -->
+    <a-link :href="`/info?url=${x.url}`">进入详情</a-link>
   </a-card>
     </a-grid-item>
     
@@ -37,6 +38,15 @@
   
 </template>
 <style scoped>
+@media screen and (max-width:600px){
+  .card-demo {
+    margin-left: 24px;
+    margin-right: 24px;
+  }
+  .grid-demo-grid{
+    grid-template-columns:repeat(1, minmax(0px, 1fr));
+  }
+}
 #xgPlayerWrap { flex: auto; }
 #xgPlayerWrap video { width: 100%; }
 </style>
@@ -46,30 +56,27 @@
         font-size: x-large;
         border-radius:14px;
         text-align: center;
-        background-color:white;
+        background-color: var(--color-fill-2);
         position: relative;
         border: 3px solid #dddddd;
         padding: 10px;
 }
+input::input-placeholder{
+	color:red;
+}
+
 .card-demo {
-  /* width: 360px; */
-  /* margin-left: 24px; */
   transition-property: all;
 }
 .card-demo:hover {
   transform: translateY(-4px);
 }
+
 </style>
 
 <script setup>
-import { ref, onMounted, reactive, computed } from 'vue';
-import Player,{Events} from 'xgplayer'
-import 'xgplayer/dist/index.min.css'
-import HlsPlugin from 'xgplayer-hls'
+import { ref } from 'vue';
 import axios from 'axios'
-import { conf } from "./conf";
-
-
 
 const queryKey = ref("")
 const contentData = ref([])
@@ -83,31 +90,4 @@ function log() {
           });
  
 }
-
-function cardClick(p){
-  console.log(p)
-}
-let player = null // 实例
-
-const init = () => {
-    player = new Player({
-        ...conf,
-        plugins: [HlsPlugin]
-    });
-    player.on(Events.PLAY, (ev) => {
-        console.log('-播放开始-', ev);
-    })
-    player.on(Events.PAUSE, (ev) => {
-        console.log('-播放结束-', ev);
-    })
-    player.on('loadedmetadata', (ev) => {
-        console.log('-媒体数据加载好了-', ev);
-    })
-    player.on(Events.SEEKED, (ev) => {
-        console.log('-跳着播放-', ev);
-    })
-    // 等各种监听事件
-}
-onMounted(() => { init() })
-
 </script>

@@ -105,15 +105,16 @@ func getInfoV2(w http.ResponseWriter, r *http.Request) {
 			v["list"] = list
 			redisKey := fmt.Sprintf(consts.REDIS_USER_TELEPLAY, keyword)
 			RedisRes := redisClint.Get(r.Context(), redisKey)
-			if RedisRes.Err() == nil {
-				val, _ := RedisRes.Result()
-				splits := strings.Split(val, ",")
-				if len(splits) > 1 && splits[0] == key && splits[1] == item["name"] {
-					item["play"] = "1"
-					infoMap := v["info"].(map[string]string)
-					infoMap["play"] = "1"
-				}
-
+			if RedisRes.Err() != nil {
+				logger.Sugar().Error(RedisRes.Err())
+				continue
+			}
+			val, _ := RedisRes.Result()
+			splits := strings.Split(val, ",")
+			if len(splits) > 1 && splits[0] == key && splits[1] == item["name"] {
+				item["play"] = "1"
+				infoMap := v["info"].(map[string]string)
+				infoMap["play"] = "1"
 			}
 		}
 	}
@@ -127,9 +128,29 @@ func PlayRecord(w http.ResponseWriter, r *http.Request) {
 	index := r.FormValue("index")
 	teleplay := r.FormValue("teleplay")
 	name := r.FormValue("name")
+	// r.Cookie("token")
+	uid := 1
 	redisKey := fmt.Sprintf(consts.REDIS_USER_TELEPLAY, teleplay)
+	userInfoKey := fmt.Sprintf(consts.REDIS_USER_INFO, uid)
+	redisClient := library.NewRedis()
 	logger.Sugar().Info(redisKey)
-	statice := library.NewRedis().SetEX(r.Context(), redisKey, fmt.Sprintf("%s,%s", index, name), time.Hour*24*60)
+	statice := redisClient.SetEX(r.Context(), redisKey, fmt.Sprintf("%s,%s", index, name), time.Hour*24*60)
+	UserInfoTeleplay := redisClient.HGet(r.Context(), userInfoKey, "teleplay")
+	teleplayReidsResult, err := UserInfoTeleplay.Result()
+	if err != nil {
+		logger.Sugar().Error(err)
+	}
+	var teleplayArray []string
+	json.Unmarshal([]byte(teleplayReidsResult), &teleplayArray)
+	if teleplayArray == nil {
+		teleplayArray = make([]string, 0)
+	}
+	teleplayArray = append(teleplayArray, teleplay)
+	teleplayByte, err := json.Marshal(teleplayArray)
+	if err != nil {
+		logger.Sugar().Error(err)
+	}
+	redisClient.HSet(r.Context(), userInfoKey, "teleplay", teleplayByte)
 	if statice.Err() != nil {
 		logger.Error("redis play record err", zap.Error(statice.Err()))
 	}
@@ -138,6 +159,10 @@ func PlayRecord(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(res)
 }
+
+// 历史观看
+func PlayHistory(w http.ResponseWriter, r *http.Request) {}
+
 func main() {
 	logger, _ = zap.NewProduction()
 	http.Handle("/query", corsMiddleware(http.HandlerFunc(query)))

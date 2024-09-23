@@ -128,29 +128,32 @@ func PlayRecord(w http.ResponseWriter, r *http.Request) {
 	index := r.FormValue("index")
 	teleplay := r.FormValue("teleplay")
 	name := r.FormValue("name")
-	// r.Cookie("token")
+	startTime := r.FormValue("startTime")
 	uid := 1
 	redisKey := fmt.Sprintf(consts.REDIS_USER_TELEPLAY, teleplay)
 	userInfoKey := fmt.Sprintf(consts.REDIS_USER_INFO, uid)
 	redisClient := library.NewRedis()
 	logger.Sugar().Info(redisKey)
-	statice := redisClient.SetEX(r.Context(), redisKey, fmt.Sprintf("%s,%s", index, name), time.Hour*24*60)
-	UserInfoTeleplay := redisClient.HGet(r.Context(), userInfoKey, "teleplay")
-	teleplayReidsResult, err := UserInfoTeleplay.Result()
+	statice := redisClient.SetEX(r.Context(), redisKey, fmt.Sprintf("%s,%s,%s", index, name, startTime), time.Hour*24*60)
+	userInfo := redisClient.Get(r.Context(), userInfoKey)
+	userInfoStr, err := userInfo.Result()
 	if err != nil {
 		logger.Sugar().Error(err)
 	}
-	var teleplayArray []string
-	json.Unmarshal([]byte(teleplayReidsResult), &teleplayArray)
-	if teleplayArray == nil {
-		teleplayArray = make([]string, 0)
+	var resMap map[string]any
+	json.Unmarshal([]byte(userInfoStr), &resMap)
+	if resMap == nil {
+		resMap = make(map[string]any, 0)
+		resMap["teleplays"] = make([]string, 0)
 	}
-	teleplayArray = append(teleplayArray, teleplay)
-	teleplayByte, err := json.Marshal(teleplayArray)
+	teleplays := resMap["teleplays"].([]string)
+	teleplays = append(teleplays, teleplay)
+	resMap["teleplays"] = teleplays
+	resMapByte, err := json.Marshal(resMap)
 	if err != nil {
 		logger.Sugar().Error(err)
 	}
-	redisClient.HSet(r.Context(), userInfoKey, "teleplay", teleplayByte)
+	redisClient.Set(r.Context(), userInfoKey, string(resMapByte), time.Hour*24*180)
 	if statice.Err() != nil {
 		logger.Error("redis play record err", zap.Error(statice.Err()))
 	}
@@ -161,13 +164,14 @@ func PlayRecord(w http.ResponseWriter, r *http.Request) {
 }
 
 // 历史观看
-func PlayHistory(w http.ResponseWriter, r *http.Request) {}
+func playStarTime(w http.ResponseWriter, r *http.Request) {}
 
 func main() {
 	logger, _ = zap.NewProduction()
 	http.Handle("/query", corsMiddleware(http.HandlerFunc(query)))
 	http.Handle("/getInfoV2", corsMiddleware(http.HandlerFunc(getInfoV2)))
 	http.Handle("/playRecord", corsMiddleware(http.HandlerFunc(PlayRecord)))
+	// http.Handle("/playStarTime",corsMiddleware(http.HandlerFunc()))
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		logger.Error("run server error", zap.Error(err))

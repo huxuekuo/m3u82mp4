@@ -54,22 +54,19 @@ const init = (playUrl) => {
         ...conf,
         plugins: [HlsPlugin]
     });
-    player.on(Events.PLAY, (ev) => {
-        console.log('-播放开始-', ev);
-    })
-    player.on(Events.PAUSE, (ev) => {
-        console.log('-播放结束-', ev);
-    })
-    player.on('loadedmetadata', (ev) => {
-        console.log('-媒体数据加载好了-', ev);
-    })
     player.on(Events.SEEKED, (ev) => {
         console.log('-跳着播放-', ev);
+    })
+    player.on(Events.TIME_UPDATE, (ev) => {
+        if (ev.currentTime % 300 == 0){
+
+        }
     })
     // 等各种监听事件
 }
 
 const route=useRoute()
+// 获取视频信息
 const getInfo = (url)=>{
     axios.get(`/getInfoV2?url=${url.split("/")[2]}`).then(response => {
         contentData.value = response
@@ -78,21 +75,18 @@ const getInfo = (url)=>{
               console.log(error);
           });
 }
+// 播放视频
 function playerD(value,key,name){
     init(value) 
+    
     const teleplay =route.query.url.split("/")[2]
    axios.get(`/playRecord?teleplay=${teleplay}&index=${key}&name=${name}`).then(response => {
- 
-          }).catch(error => {
-              // 请求失败处理
-            //   console.log(error);
-          });
-          axios.get(`/getInfoV2?url=${teleplay}`).then(responses => {
+    }).catch(error => {});
+    axios.get(`/getInfoV2?url=${teleplay}`).then(responses => {
         contentData.value = responses
-          }).catch(error => {
-              // 请求失败处理
-              console.log(error);
-          });
+    }).catch(error => {
+        console.log(error);
+    });
 }
 
 onMounted(() => {

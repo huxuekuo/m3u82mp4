@@ -14,7 +14,7 @@ export const conf = {
     defaultPlaybackRate: 1, // 默认播放速度（可选：0.5/0.75/1/1.5/2等）
     volume: 0.72, // 播放音量（可选：0 ~ 1）
     loop: false, // 是否循环播放，默认不循环播放
-    startTime: 0, // 点播模式下，初始起播时间
+    startTime: 10, // 点播模式下，初始起播时间
     videoAttributes: {}, // video扩展属性，暂且不配置
     lang: 'zh-cn', // 播放器初始显示语言，设置为中文
     fluid: true, // 是否流式布局（宽高优先于流失布局，默认16:9）注掉上方宽高看效果

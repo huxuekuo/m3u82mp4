@@ -2,7 +2,6 @@
   <br/>
   <a-grid :cols="24" :colGap="12" :rowGap="30" class="grid-demo-grid" :collapsed="collapsed">
     <a-grid-item class="demo-item" :offset="24"></a-grid-item>
-    <a-grid-item class="demo-item" :span="3" style="background: #C59AED;"><a-button type="primary">Primary</a-button></a-grid-item>
   </a-grid>
   <br/>
   <a-grid :cols="3" :colGap="12" :rowGap="30" class="grid-demo-grid" :collapsed="collapsed">
@@ -85,7 +84,7 @@ const visible = ref(0)
 const queryKey = ref("")
 const contentData = ref([])
 function log() {
-  if (proxy.$cookies.get("t") === ""){
+  if (!proxy.$cookies.get("urk")){
     visible.value +=1
   }else{
     axios.get(`/video/query?key=${queryKey.value}`).then(response => {

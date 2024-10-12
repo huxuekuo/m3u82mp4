@@ -53,6 +53,9 @@ export const conf = {
     controls: true, // 是否使用底部控制栏，默认使用
     miniprogress: true, // 是否使用mini进度条（当底部控制栏隐藏时生效）
     screenShot: false, // 关闭截图功能
+    keyboard:{
+        playbackRate:2,
+    },
     rotate: false, // 是否使用视频旋转插件，默认不使用
     download: false, // 是否使用下载按钮，一般不用，一般自定义控制
     pip: false, // 使用使用画中画模式，默认不用

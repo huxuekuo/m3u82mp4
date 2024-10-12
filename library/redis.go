@@ -9,7 +9,7 @@ func NewRedis() *redis.Client {
 		return RDB
 	}
 	RDB = redis.NewClient(&redis.Options{
-		Addr:     "152.136.33.217:6379",
+		Addr:     "152.136.33.217:3140",
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})

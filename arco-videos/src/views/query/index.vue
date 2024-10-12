@@ -1,9 +1,11 @@
 <template>
-     
+  <br/>
+  <a-grid :cols="24" :colGap="12" :rowGap="30" class="grid-demo-grid" :collapsed="collapsed">
+    <a-grid-item class="demo-item" :offset="24"></a-grid-item>
+    <a-grid-item class="demo-item" :span="3" style="background: #C59AED;"><a-button type="primary">Primary</a-button></a-grid-item>
+  </a-grid>
+  <br/>
   <a-grid :cols="3" :colGap="12" :rowGap="30" class="grid-demo-grid" :collapsed="collapsed">
-    <a-grid-item class="demo-item" :offset="1"></a-grid-item>
-    <a-grid-item class="demo-item" :offset="1"></a-grid-item>
-    <a-grid-item class="demo-item" :offset="1"></a-grid-item>
     <a-grid-item class="demo-item" :offset="1"></a-grid-item>
     <a-grid-item class="demo-item" :offset="1"></a-grid-item>
     <a-grid-item class="demo-item" :span="2">
@@ -29,13 +31,12 @@
           连载至：{{x.lianzaijs}}集<br/>
         </template>
     </a-card-meta>
-    <!-- <a-link :href="`http://xdm530.com${x.url}`">进入详情</a-link> -->
     <a-link :href="`/info?url=${x.url}`">进入详情</a-link>
   </a-card>
     </a-grid-item>
     
   </a-grid>
-  
+  <login :visibleParent="visible"></login>
 </template>
 <style scoped>
 @media screen and (max-width:600px){
@@ -75,19 +76,24 @@ input::input-placeholder{
 </style>
 
 <script setup>
-import { ref } from 'vue';
+import { ref,getCurrentInstance } from 'vue';
 import axios from 'axios'
+import login from '../../components/login/login.vue'
 
+const {proxy} = getCurrentInstance()
+const visible = ref(0)
 const queryKey = ref("")
 const contentData = ref([])
 function log() {
-  axios.get(`/query?key=${queryKey.value}`).then(response => {
-    contentData.value = response
-    console.log(contentData)
-          }).catch(error => {
-              // 请求失败处理
-              console.log(error);
-          });
- 
+  if (proxy.$cookies.get("t") === ""){
+    visible.value +=1
+  }else{
+    axios.get(`/video/query?key=${queryKey.value}`).then(response => {
+      contentData.value = response
+    }).catch(error => {
+       // 请求失败处理
+      console.log(error);
+    });
+  }
 }
 </script>

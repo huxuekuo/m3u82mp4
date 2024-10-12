@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 import ArcoVue from '@arco-design/web-vue';
 import ArcoVueIcon from '@arco-design/web-vue/es/icon';
 import globalComponents from '@/components';
+import VueCookies from 'vue3-cookies'
 import axios from 'axios'
 import router from './router';
 import store from './store';
@@ -19,11 +20,13 @@ import '@/api/interceptor';
 
 const app = createApp(App);
 axios.defaults.baseURL = "/api"
+axios.defaults.withCredentials = true
 app.use(ArcoVue, {});
 app.use(ArcoVueIcon);
 app.use(router);
 app.use(store);
 app.use(i18n);
+app.use(VueCookies)
 app.use(globalComponents);
 app.use(directive);
 app.mount('#app');

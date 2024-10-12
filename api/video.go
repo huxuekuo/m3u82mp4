@@ -1,0 +1,179 @@
+package api
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"m3u82mp4/api/middleware"
+	"m3u82mp4/consts"
+	"m3u82mp4/library"
+	"m3u82mp4/model/video"
+	"net/http"
+	"net/url"
+	"regexp"
+	"strings"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+)
+
+type VideoApi struct {
+	BaseApi
+}
+
+// InitVideoRouter 初始化路由
+func InitVideoRouter(r *gin.RouterGroup) {
+	api := &VideoApi{}
+	api.RouterGroup = r.Group("/video", middleware.SetUserInfo)
+	api.ApiByte("GET", "/query", api.Query)
+	api.Api("GET", "/getInfoV2", api.GetInfo)
+	api.Api("GET", "/playRecord", api.PlayRecord)
+}
+
+// Query 查询影视信息
+func (v *VideoApi) Query(c *gin.Context) any {
+	res := make([]byte, 0)
+	key := c.Query("key")
+	v.Logger.Sugar().Info(key)
+	// 将编码后的字符串中的 '%' 替换为 '%25'
+	encodedStr := strings.Replace(url.QueryEscape(consts.VIDEO_URL_SOURCE), "%", "%25", -1)
+	// 第二次 URL 编码
+	doubleEncodedStr := url.QueryEscape(encodedStr)
+	resp, err := http.Get(fmt.Sprintf(consts.VIDEO_QUERY_URL, url.QueryEscape(key), doubleEncodedStr))
+	if err != nil {
+		v.Logger.Sugar().Error(err)
+		return res
+	}
+	defer resp.Body.Close()
+	bytedata, err := io.ReadAll(resp.Body)
+	if err != nil {
+		v.Logger.Sugar().Error(err)
+		return res
+	}
+	return bytedata
+}
+
+// GetInfo 获取详细信息
+func (v *VideoApi) GetInfo(c *gin.Context) any {
+	ignores := map[string]any{
+		"playarr":    0,
+		"playarr_fs": 0,
+		"playarr_uk": 0,
+		"playarr_bj": 0,
+		"playarr_wj": 0,
+	}
+	defaultRes := map[string]any{}
+	keyword := c.Query("url")
+	resp, err := http.Get("http://v.58hda.com:8077/ne2/s" + keyword + ".js")
+	if err != nil {
+		v.Logger.Error("request info err", zap.Error(err))
+		return defaultRes
+	}
+	defer resp.Body.Close()
+	allbyte, err := io.ReadAll(resp.Body)
+	if err != nil {
+		v.Logger.Error("read all err", zap.Error(err))
+		return defaultRes
+	}
+	redisClint := library.NewRedis()
+	RedisRes := redisClint.Get(c, fmt.Sprintf(consts.REDIS_USER_TELEPLAY, v.URK, keyword))
+	if RedisRes.Err() != nil {
+		v.Logger.Sugar().Error(RedisRes.Err())
+	}
+	reg := regexp.MustCompile(`(\w+)\[(\d+)\]=\"(.*)\"`)
+	res := make(map[string]map[string]any, 0)
+	allline := strings.Split(string(allbyte), ";")
+	for _, v := range allline {
+		if !strings.Contains(v, "http") && !strings.Contains(v, "https") {
+			continue
+		}
+		matches := reg.FindStringSubmatch(v)
+		if len(matches) == 4 {
+			key := fmt.Sprintf("%s", matches[1]) // 不包含数组索引
+			value := matches[3]
+			// 忽略一些不需要的线路
+			if _, ok := ignores[key]; ok {
+				continue
+			}
+			v, ok := res[key]
+			if !ok {
+				v = make(map[string]any, 0)
+				v["list"] = make([]map[string]string, 0)
+				v["info"] = map[string]string{
+					"play": "0",
+				}
+				res[key] = v
+			}
+			list := v["list"].([]map[string]string)
+			item := make(map[string]string)
+			content := strings.Split(value, ",")
+			item["url"] = content[0]
+			item["name"] = content[len(content)-1]
+			item["play"] = "0"
+			item["startTime"] = "0"
+			list = append(list, item)
+			v["list"] = list
+			val, _ := RedisRes.Result()
+			if val != "" {
+				splits := strings.Split(val, ",")
+				if len(splits) > 1 && splits[0] == key && splits[1] == item["name"] {
+					item["play"] = "1"
+					infoMap := v["info"].(map[string]string)
+					infoMap["play"] = "1"
+					if len(splits) >= 2 {
+						item["startTime"] = splits[2]
+					}
+				}
+			}
+		}
+	}
+	return res
+}
+
+// PlayRecord 播放记录
+func (v *VideoApi) PlayRecord(c *gin.Context) any {
+	res := &Respone{}
+	var param video.PlayRecordParam
+	c.ShouldBindQuery(&param)
+	res.OK(map[string]string{
+		"msg": "OK",
+	})
+	redisKey := fmt.Sprintf(consts.REDIS_USER_TELEPLAY, v.URK, param.Teleplay)
+	userInfoKey := fmt.Sprintf(consts.REDIS_USER_INFO, v.URK)
+	redisClient := library.NewRedis()
+	if param.StartTime == "" {
+		playRecord, _ := redisClient.Get(c, redisKey).Result()
+		if playRecord != "" {
+			splits := strings.Split(playRecord, ",")
+			// 集数与渠道一致替换否则就不需要替换
+			if len(splits) >= 2 && splits[0] == param.Index && splits[1] == param.Name {
+				param.StartTime = splits[2]
+			}
+		}
+	}
+	statice := redisClient.SetEX(c, redisKey, fmt.Sprintf("%s,%s,%s", param.Index, param.Name, param.StartTime), time.Hour*24*60)
+	userInfo := redisClient.Get(c, userInfoKey)
+	userInfoStr, err := userInfo.Result()
+	if err != nil {
+		v.Logger.Sugar().Error(err)
+	}
+	var resMap map[string]any
+	json.Unmarshal([]byte(userInfoStr), &resMap)
+	if resMap == nil {
+		resMap = make(map[string]any, 0)
+		resMap["teleplays"] = []any{}
+	}
+	teleplays := resMap["teleplays"].([]any)
+	teleplays = append(teleplays, param.Teleplay)
+	resMap["teleplays"] = teleplays
+	resMapByte, err := json.Marshal(resMap)
+	if err != nil {
+		v.Logger.Sugar().Error(err)
+	}
+	redisClient.Set(c, userInfoKey, string(resMapByte), time.Hour*24*180)
+	if statice.Err() != nil {
+		v.Logger.Error("redis play record err", zap.Error(statice.Err()))
+	}
+	return res
+}

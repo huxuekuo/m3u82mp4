@@ -1,11 +1,11 @@
 <template>
   <!-- a -->
-  <!-- <a-layout class="layout" :class="{ mobile: appStore.hideMenu }">
-    <div v-if="navbar" class="layout-navbar"> -->
-      <!-- <NavBar /> -->
-    <!-- </div>
-    <a-layout>
-      <a-layout> -->
+  <a-layout class="layout" :class="{ mobile: appStore.hideMenu }">
+    <div v-if="navbar" class="layout-navbar">
+      <NavBar />
+     </div>
+    </a-layout>
+      <!-- <a-layout>  -->
         <!-- <a-layout-sider
           v-if="renderMenu"
           v-show="!hideMenu"
@@ -17,12 +17,12 @@
           :style="{ paddingTop: navbar ? '60px' : '' }"
           :hide-trigger="true"
           @collapse="setCollapsed"
-        > -->
-          <!-- <div class="menu-wrapper">
+        > 
+          <div class="menu-wrapper">
             <Menu />
-          </div> -->
-        <!-- </a-layout-sider> -->
-        <!-- <a-drawer
+          </div>
+         </a-layout-sider> -->
+      <!--   <a-drawer
           v-if="hideMenu"
           :visible="drawerVisible"
           placement="left"

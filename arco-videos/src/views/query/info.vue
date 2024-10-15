@@ -2,7 +2,7 @@
     <a-grid :cols="10" class="grid-demo-grid" :collapsed="collapsed">
         <br>
         <a-grid-item class="demo-item" :span="18"></a-grid-item>
-        <a-grid-item class="demo-item" :span="2" :offset="1"> <a-link href="/query" style="text-decoration:underline;">&lt;&lt;返回</a-link></a-grid-item>
+        <a-grid-item class="demo-item" :span="2" :offset="1"></a-grid-item>
     </a-grid>
     <a-grid :cols="8" :colGap="12" :rowGap="30" class="grid-demo-grid" :collapsed="collapsed">
         <a-grid-item class="demo-item" :span="8"></a-grid-item>

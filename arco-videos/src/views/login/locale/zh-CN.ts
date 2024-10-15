@@ -10,7 +10,7 @@ export default {
   'login.form.forgetPassword': '忘记密码',
   'login.form.login': '登录',
   'login.form.register': '注册账号',
-  'login.banner.slogan1': '开箱即用的高质量模板',
+  'login.banner.slogan1': '追剧神器',
   'login.banner.subSlogan1': '丰富的的页面模板，覆盖大多数典型业务场景',
   'login.banner.slogan2': '内置了常见问题的解决方案',
   'login.banner.subSlogan2': '国际化，路由配置，状态管理应有尽有',

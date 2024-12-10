@@ -11,4 +11,5 @@ func InitRouter(r *gin.RouterGroup) {
 	r.Use(middleware.Cors, middleware.SetLogger, middleware.SetDB)
 	api.InitVideoRouter(r)
 	api.InitUserRouter(r)
+	api.InitSysRouter(r)
 }

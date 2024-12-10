@@ -11,6 +11,16 @@
         </a-grid-item>
     </a-grid>
     <br/>
+    <a-grid  :cols="48" class="grid-demo-grid" :collapsed="collapsed">
+        <a-grid-item class="demo-item"  :offset="1" :span="1">
+                <a-button @click="download()">
+                    <template #icon>
+                    <icon-font type="icon-xiazai" :size="26"/>
+                </template> 
+            </a-button>
+         </a-grid-item>
+    </a-grid>
+    <br/>
     <a-tabs type="rounded" size="medium"  animation="true">
         <a-tab-pane v-for="(value,key,index) in contentData" v-bind:key="index" >
             <template #title>
@@ -36,7 +46,7 @@
 </style>
 
 <script setup>
-import { ref,onMounted } from 'vue';
+import { ref,onMounted,getCurrentInstance } from 'vue';
 import Player,{Events} from 'xgplayer'
 import 'xgplayer/dist/index.min.css'
 import { useRoute } from 'vue-router'
@@ -45,14 +55,17 @@ import { Icon } from '@arco-design/web-vue';
 import axios from 'axios';
 import { conf } from "./conf";
 
+const {proxy} = getCurrentInstance()
+const downloadUrl = ref("")
 const contentData = ref([])
 const playStruct = ref({
     teleplay:"",
     key:"",
     name:""
 })
+
 let player = null // 实例//
-const IconFont = Icon.addFromIconFontCn({ src: 'https://at.alicdn.com/t/c/font_4690348_of4nm2nht7e.js' });
+const IconFont = Icon.addFromIconFontCn({ src: 'https://at.alicdn.com/t/c/font_4690348_fsx088vbdlu.js' });
 const init = (playUrl,startTime2) => {
     player = new Player({
         url:playUrl,
@@ -76,8 +89,8 @@ const init = (playUrl,startTime2) => {
 const route=useRoute()
 const defaultIndex = ref(0)
 // 获取视频信息
-const getInfo = (url)=>{
-    axios.get(`/video/getInfoV2?url=${url.split("/")[2]}`).then(response => {
+const getInfo = (id)=>{
+    axios.get(`/video/getInfoV2?url=${id}`).then(response => {
         contentData.value = response
         Object.keys(response).forEach(function(key,index) {
             if (response[key].info.play === "1"){
@@ -85,17 +98,25 @@ const getInfo = (url)=>{
             }
             
         })
-        console.log(defaultIndex)
     }).catch(error => {
         // 请求失败处理
         console.log(error);
     });
 }
+
+function download(){
+    if (downloadUrl.value === ""){
+        proxy.$message.error("请选择要下载的内容")
+        return
+    }
+    axios.get(`/video/download?url=${downloadUrl.value}`).then(response => {
+    }).catch(error => {});
+}
 // 播放视频
 function playerD(value,key,name,startTime){
-    console.log(startTime)
+    downloadUrl.value = value
     init(value,startTime)
-    const teleplay =route.query.url.split("/")[2]
+    const teleplay =route.query.id
     playStruct.value.teleplay = teleplay
     playStruct.value.key = key
     playStruct.value.name = name
@@ -105,11 +126,12 @@ function playerD(value,key,name,startTime){
         contentData.value = responses
         }).catch(error => {
     });
+    
 }
 
 onMounted(() => {
     init("",0) 
-     getInfo(route.query.url)
+    getInfo(route.query.id)
      
 })
 </script>

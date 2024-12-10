@@ -13,6 +13,7 @@
 
 <script setup>
 import {watch,ref,getCurrentInstance} from 'vue'
+import {useUserInfoStore} from '@/store'
 import axios from 'axios'
 
 const {proxy} = getCurrentInstance()
@@ -21,12 +22,13 @@ const ui = ref({
   p:"",
 })
 
+const userInfo = useUserInfoStore()
+
 const props = defineProps({
   visibleParent: Boolean,
 });
 
 const visible = ref(false)
-
 watch(() => props.visibleParent,(n,o)=>{
   visible.value = true
 })

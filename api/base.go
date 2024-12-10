@@ -30,9 +30,10 @@ type Respone struct {
 	Msg  string `json:"msg"`
 }
 
-func (r *Respone) OK(data any) {
+func (r *Respone) OK(data any) *Respone {
 	r.Code = 200
 	r.Data = data
+	return r
 }
 
 func (r *Respone) OK2() *Respone {
@@ -67,6 +68,10 @@ func (b *BaseApi) ApiByte(httpMethod, relativePath string, h HandleFunc) {
 			return
 		}
 		res := h(c)
+		if v, ok := res.(errcode.ErrorCode); ok {
+			c.JSON(200, v)
+			return
+		}
 		c.Writer.Write(res.([]byte))
 	})
 }

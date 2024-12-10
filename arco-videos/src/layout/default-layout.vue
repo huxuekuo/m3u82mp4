@@ -49,7 +49,7 @@
 <script lang="ts" setup>
   import { ref, computed, watch, provide, onMounted } from 'vue';
   import { useRouter, useRoute } from 'vue-router';
-  import { useAppStore, useUserStore } from '@/store';
+  import { useAppStore, useUserStore,useUserInfoStore } from '@/store';
   import NavBar from '@/components/navbar/index.vue';
   import Menu from '@/components/menu/index.vue';
   import Footer from '@/components/footer/index.vue';
@@ -62,6 +62,7 @@
   const appStore = useAppStore();
   const userStore = useUserStore();
   const router = useRouter();
+  const userInfoStore = useUserInfoStore()
   const route = useRoute();
   const permission = usePermission();
   useResponsive(true);
@@ -70,6 +71,7 @@
   const renderMenu = computed(() => appStore.menu && !appStore.topMenu);
   const hideMenu = computed(() => appStore.hideMenu);
   const footer = computed(() => appStore.footer);
+  const avatar = computed(()=>userInfoStore.avatar)
   const menuWidth = computed(() => {
     return appStore.menuCollapse ? 48 : appStore.menuWidth;
   });

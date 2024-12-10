@@ -6,8 +6,12 @@ import (
 	"io"
 	"m3u82mp4/api/middleware"
 	"m3u82mp4/consts"
+	"m3u82mp4/consts/errcode"
 	"m3u82mp4/library"
+	"m3u82mp4/model/db"
+	systemser "m3u82mp4/model/service/system"
 	"m3u82mp4/model/video"
+	"m3u82mp4/utils"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -26,21 +30,28 @@ type VideoApi struct {
 func InitVideoRouter(r *gin.RouterGroup) {
 	api := &VideoApi{}
 	api.RouterGroup = r.Group("/video", middleware.SetUserInfo)
-	api.ApiByte("GET", "/query", api.Query)
-	api.Api("GET", "/getInfoV2", api.GetInfo)
-	api.Api("GET", "/playRecord", api.PlayRecord)
+	api.ApiByte("GET", "/query", api.Query)       // 列表
+	api.Api("GET", "/getInfoV2", api.GetInfo)     // 详情
+	api.Api("GET", "/playRecord", api.PlayRecord) // 播放记录
+	api.Api("POST", "/star", api.Star)            // 收藏
+	api.Api("GET", "/starList", api.StarList)     // 收藏列表
+	api.Api("GET", "/download", api.Download)     // 下载
 }
 
 // Query 查询影视信息
 func (v *VideoApi) Query(c *gin.Context) any {
 	res := make([]byte, 0)
 	key := c.Query("key")
+	if len(key) <= 1 {
+		return errcode.VIDEO_QUERY_KEY_LEN_ERR
+	}
 	v.Logger.Sugar().Info(key)
 	// 将编码后的字符串中的 '%' 替换为 '%25'
 	encodedStr := strings.Replace(url.QueryEscape(consts.VIDEO_URL_SOURCE), "%", "%25", -1)
 	// 第二次 URL 编码
 	doubleEncodedStr := url.QueryEscape(encodedStr)
-	resp, err := http.Get(fmt.Sprintf(consts.VIDEO_QUERY_URL, url.QueryEscape(key), doubleEncodedStr))
+
+	resp, err := http.Get(fmt.Sprintf(systemser.GetURL(c), url.QueryEscape(key), doubleEncodedStr))
 	if err != nil {
 		v.Logger.Sugar().Error(err)
 		return res
@@ -77,9 +88,9 @@ func (v *VideoApi) GetInfo(c *gin.Context) any {
 		return defaultRes
 	}
 	redisClint := library.NewRedis()
-	RedisRes := redisClint.Get(c, fmt.Sprintf(consts.REDIS_USER_TELEPLAY, v.URK, keyword))
-	if RedisRes.Err() != nil {
-		v.Logger.Sugar().Error(RedisRes.Err())
+	redisVal, err := redisClint.Get(c, fmt.Sprintf(consts.REDIS_USER_TELEPLAY, v.URK, keyword)).Result()
+	if err != nil {
+		v.Logger.Error("read all err", zap.Error(err))
 	}
 	reg := regexp.MustCompile(`(\w+)\[(\d+)\]=\"(.*)\"`)
 	res := make(map[string]map[string]any, 0)
@@ -114,9 +125,8 @@ func (v *VideoApi) GetInfo(c *gin.Context) any {
 			item["startTime"] = "0"
 			list = append(list, item)
 			v["list"] = list
-			val, _ := RedisRes.Result()
-			if val != "" {
-				splits := strings.Split(val, ",")
+			if redisVal != "" {
+				splits := strings.Split(redisVal, ",")
 				if len(splits) > 1 && splits[0] == key && splits[1] == item["name"] {
 					item["play"] = "1"
 					infoMap := v["info"].(map[string]string)
@@ -129,6 +139,42 @@ func (v *VideoApi) GetInfo(c *gin.Context) any {
 		}
 	}
 	return res
+}
+
+// Star 收藏
+func (v *VideoApi) Star(c *gin.Context) any {
+	var param video.StarParam
+	c.ShouldBindJSON(&param)
+	if !param.Check() {
+		return errcode.PARAM_ERR
+	}
+	starDB := db.NewStarDB(v.MysqlDB)
+	res := &Respone{}
+	er, b := starDB.Exists(v.User.Id, param.ID)
+	if er != nil {
+		return er
+	}
+	if b {
+		return res.OK2()
+	}
+	err, id := utils.ID()
+	if err != nil {
+		return errcode.ApiCustom(err.Error())
+	}
+	now := time.Now().Unix()
+	rerr := starDB.Create(&db.Star{
+		Id:         id,
+		Name:       param.Name,
+		Url:        param.Url,
+		TvID:       param.ID,
+		UserID:     v.User.Id,
+		Createtime: now,
+		Updatetime: now,
+	})
+	if rerr != nil {
+		return rerr
+	}
+	return res.OK2()
 }
 
 // PlayRecord 播放记录
@@ -176,4 +222,29 @@ func (v *VideoApi) PlayRecord(c *gin.Context) any {
 		v.Logger.Error("redis play record err", zap.Error(statice.Err()))
 	}
 	return res
+}
+
+// StarList 收藏列表
+func (v *VideoApi) StarList(c *gin.Context) any {
+	starDB := db.NewStarDB(v.MysqlDB)
+	errcode, stars := starDB.ListAll(v.User.Id)
+	if errcode != nil {
+		return errcode
+	}
+	r := &Respone{}
+	return r.OK(stars)
+}
+
+// Download 下载视频
+func (v *VideoApi) Download(c *gin.Context) any {
+	var param struct {
+		URL string `json:"url" from:"url"`
+	}
+	c.ShouldBindQuery(&param)
+	if len(param.URL) <= 0 {
+		return errcode.PARAM_ERR
+	}
+	fmt.Println(param.URL)
+
+	return 1
 }

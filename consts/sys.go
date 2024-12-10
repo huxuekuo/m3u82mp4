@@ -15,4 +15,11 @@ const (
 	SYS_AUTH_USER_REDIS_KEY_NAME = "urk"
 )
 
+const (
+	SYS_VIDEO_QUERY         = "query"
+	SYS_VIDEO_QUERY_ADD     = "add"
+	SYS_VIDEO_QUERY_GET     = "get"
+	SYS_VIDEO_QUERY_DELETED = "deleted"
+)
+
 const SYS_SEQUENCE_ID = 1

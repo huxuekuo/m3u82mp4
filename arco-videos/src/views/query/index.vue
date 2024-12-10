@@ -16,10 +16,9 @@
     <a-grid-item class="demo-item" :span="1" v-for="x in contentData" v-bind:key="x" > 
         <a-card class="card-demo" >
     <template #cover>
-      <div >
+      <div :style="{height: '260px'}">
         <img
-          :style="{ width: '100%', transform: 'translateY(-20px)' }"
-          alt="dessert"
+          :style="{ width: '100%',height: 'auto'}"
           :src="x.thumb"
         />
       </div>
@@ -30,7 +29,13 @@
           连载至：{{x.lianzaijs}}集<br/>
         </template>
     </a-card-meta>
-    <a-link :href="`/info?url=${x.url}`">进入详情</a-link>
+    <a-link :href="`/info?id=${UrlParse(x.url)}`">进入详情</a-link>
+    <a-link @click="star(UrlParse(x.url),x.title,x.thumb)">
+      收藏
+      <template #icon>
+        <icon-font :type="exists(UrlParse(x.url))" :size="15"/>
+    </template>
+    </a-link>
   </a-card>
     </a-grid-item>
     
@@ -76,6 +81,8 @@ input::input-placeholder{
 
 <script setup>
 import { ref,getCurrentInstance } from 'vue';
+import { Icon } from '@arco-design/web-vue';
+import {UrlParse} from '@/utils/url'
 import axios from 'axios'
 import login from '../../components/login/login.vue'
 
@@ -83,16 +90,72 @@ const {proxy} = getCurrentInstance()
 const visible = ref(0)
 const queryKey = ref("")
 const contentData = ref([])
+const starFiled = ref(0)
+const IconFont = Icon.addFromIconFontCn({ src: 'https://at.alicdn.com/t/c/font_4690348_x0593fl85v.js' });
+const starList = ref([])
+axios.get(`/video/starList`).then(response => {
+  if (response.code === 200){
+    response.data.forEach(element => {
+      starList.value.push(element.tvId)
+    });
+    console.log(starList)
+  }
+}).catch(error => {
+// 请求失败处理
+console.log(error);
+});
+
+function exists(tvId){
+  let b = "icon-dibudaohanglan-"
+  starList.value.forEach(element => {
+    if (element === tvId){
+      b = "icon-shoucang-xingxing"
+    }
+    });
+    return b
+}
+
 function log() {
   if (!proxy.$cookies.get("urk")){
     visible.value +=1
   }else{
     axios.get(`/video/query?key=${queryKey.value}`).then(response => {
-      contentData.value = response
+      if (response.code === 7001){
+        proxy.$message.error(response.msg)
+        return
+      }
+        contentData.value = response
     }).catch(error => {
        // 请求失败处理
       console.log(error);
     });
   }
+}
+
+function star(pid,pname,purl){
+  axios.post("/video/star",{
+    id:pid,
+    name:pname,
+    url:purl
+  }).then(response => {
+      if (response.code !== 200){
+        proxy.$message.error(response.msg)
+        return
+      }
+      proxy.$message.success("收藏成功")
+      axios.get(`/video/query?key=${queryKey.value}`).then(queryResponse => {
+      if (queryResponse.code === 7001){
+        proxy.$message.error(queryResponse.msg)
+        return
+      }
+      contentData.value = queryResponse
+    }).catch(error => {
+       // 请求失败处理
+      console.log(error);
+    });
+    }).catch(error => {
+       // 请求失败处理
+      console.log(error);
+    });
 }
 </script>

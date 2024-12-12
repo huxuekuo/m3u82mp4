@@ -66,3 +66,12 @@ func (s *StarDB) Exists(UserID int64, tvID string) (*errcode.ErrorCode, bool) {
 	}
 	return nil, false
 }
+
+func (s *StarDB) DeletedByTvId(UserID int64, tvID string) (*errcode.ErrorCode, bool) {
+	rt := s.db.Table("v_star").Where("user_id=? and tv_id=?", UserID, tvID).Delete(&Star{})
+	if rt.Error != nil {
+		er := errcode.DBCustom(rt.Error.Error())
+		return &er, false
+	}
+	return nil, true
+}

@@ -155,6 +155,11 @@ func (v *VideoApi) Star(c *gin.Context) any {
 		return er
 	}
 	if b {
+		er, _ = starDB.DeletedByTvId(v.User.Id, param.ID)
+		if er != nil {
+			return er
+		}
+		res.Msg = "取消收藏成功"
 		return res.OK2()
 	}
 	err, id := utils.ID()
@@ -174,6 +179,7 @@ func (v *VideoApi) Star(c *gin.Context) any {
 	if rerr != nil {
 		return rerr
 	}
+	res.Msg = "收藏成功"
 	return res.OK2()
 }
 
@@ -244,7 +250,7 @@ func (v *VideoApi) Download(c *gin.Context) any {
 	if len(param.URL) <= 0 {
 		return errcode.PARAM_ERR
 	}
-	fmt.Println(param.URL)
+	library.Logger.Sugar().Info(param.URL)
 
 	return 1
 }

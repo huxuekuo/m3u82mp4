@@ -12,33 +12,61 @@
     </a-grid-item>
   </a-grid>
 <br/>
+  <a-collapse :default-active-key="1" style="width: 98%;margin-left: 1%;">
+    <a-collapse-item header="收藏列表" key="1">
+      <a-grid :cols="6" :rowGap="5" :colGap="5"  class="grid-demo-grid">
+        <a-grid-item class="demo-item" :span="1" v-for="x in starListEle" :key="x" > 
+          <a-card class="card-demo" >
+      <template #cover>
+        <div :style="{height: '260px'}">
+          <img
+            :style="{ width: '100%',height: 'auto'}"
+            :src="x.url"
+          />
+        </div>
+      </template>
+      <a-card-meta :title="x.name">
+      </a-card-meta>
+      <a-link :href="`/info?id=${x.tvId}`">进入详情</a-link>
+      <a-link @click="star(x.tvId,x.name,x.url)">
+        收藏
+        <template #icon>
+          <icon-font :type="exists(x.tvId)" :size="15"/>
+      </template>
+      </a-link>
+      </a-card>
+      </a-grid-item>
+      </a-grid>
+    </a-collapse-item>
+  </a-collapse>
+
+<br>
   <a-grid :cols="6" :rowGap="5" :colGap="5"  class="grid-demo-grid">
-    <a-grid-item class="demo-item" :span="1" v-for="x in contentData" v-bind:key="x" > 
+    <a-grid-item class="demo-item" :span="1" v-for="(item) in contentData" :key="item.title"> 
         <a-card class="card-demo" >
     <template #cover>
       <div :style="{height: '260px'}">
         <img
           :style="{ width: '100%',height: 'auto'}"
-          :src="x.thumb"
+          :src="item.thumb"
         />
       </div>
     </template>
-    <a-card-meta :title="x.title">
+    <a-card-meta :title="item.title">
       <template #description>
-          地区：{{x.area}}<br/>
-          连载至：{{x.lianzaijs}}集<br/>
+          地区：{{item.area}}<br/>
+          连载至：{{item.lianzaijs}}集<br/>
         </template>
     </a-card-meta>
-    <a-link :href="`/info?id=${UrlParse(x.url)}`">进入详情</a-link>
-    <a-link @click="star(UrlParse(x.url),x.title,x.thumb)">
+    <a-link :href="`/info?id=${UrlParse(item.url)}`">进入详情</a-link>
+    <a-link @click="star(UrlParse(item.url),item.title,item.thumb)">
       收藏
       <template #icon>
-        <icon-font :type="exists(UrlParse(x.url))" :size="15"/>
+        <icon-font :type="exists(UrlParse(item.url))" :size="15"/>
     </template>
     </a-link>
   </a-card>
     </a-grid-item>
-    
   </a-grid>
   <login :visibleParent="visible"></login>
 </template>
@@ -90,15 +118,15 @@ const {proxy} = getCurrentInstance()
 const visible = ref(0)
 const queryKey = ref("")
 const contentData = ref([])
-const starFiled = ref(0)
 const IconFont = Icon.addFromIconFontCn({ src: 'https://at.alicdn.com/t/c/font_4690348_x0593fl85v.js' });
 const starList = ref([])
+const starListEle = ref([])
 axios.get(`/video/starList`).then(response => {
   if (response.code === 200){
-    response.data.forEach(element => {
+      response.data.forEach(element => {
       starList.value.push(element.tvId)
+      starListEle.value = response.data
     });
-    console.log(starList)
   }
 }).catch(error => {
 // 请求失败处理
@@ -114,21 +142,25 @@ function exists(tvId){
     });
     return b
 }
+function queryVideo(){
+  axios.get(`/video/query?key=${queryKey.value}`).then(queryResponse => {
+      if (queryResponse.code === 7001){
+        proxy.$message.error(queryResponse.msg)
+        return
+      }
+      contentData.value = queryResponse
+      console.log(contentData.value)
+    }).catch(error => {
+       // 请求失败处理
+      console.log(error);
+    });
+}
 
 function log() {
   if (!proxy.$cookies.get("urk")){
     visible.value +=1
   }else{
-    axios.get(`/video/query?key=${queryKey.value}`).then(response => {
-      if (response.code === 7001){
-        proxy.$message.error(response.msg)
-        return
-      }
-        contentData.value = response
-    }).catch(error => {
-       // 请求失败处理
-      console.log(error);
-    });
+    queryVideo()
   }
 }
 
@@ -142,20 +174,13 @@ function star(pid,pname,purl){
         proxy.$message.error(response.msg)
         return
       }
-      proxy.$message.success("收藏成功")
-      axios.get(`/video/query?key=${queryKey.value}`).then(queryResponse => {
-      if (queryResponse.code === 7001){
-        proxy.$message.error(queryResponse.msg)
-        return
-      }
-      contentData.value = queryResponse
-    }).catch(error => {
-       // 请求失败处理
-      console.log(error);
-    });
+      proxy.$message.success(response.msg)
+      queryVideo()
     }).catch(error => {
        // 请求失败处理
       console.log(error);
     });
 }
+
+
 </script>

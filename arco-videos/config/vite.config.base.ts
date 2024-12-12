@@ -52,7 +52,7 @@ export default defineConfig({
     host:"0.0.0.0",
     proxy:{
       '/api': {
-        target: 'http://127.0.0.1:8080/', // 实际请求地址
+        target: 'http://62.234.47.210:8080/', // 实际请求地址
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },

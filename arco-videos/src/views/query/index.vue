@@ -1,100 +1,104 @@
 <template>
-  <br/>
-  <!-- <a-alert type="error">为什么搜索后没有可选集？</a-alert> -->
-  <a-grid :cols="24" :colGap="12" :rowGap="30" class="grid-demo-grid" :collapsed="collapsed">
-    <a-grid-item class="demo-item" :offset="24"></a-grid-item>
-  </a-grid>
-  <br/>
-  <a-grid :cols="3" :colGap="12" :rowGap="30" class="grid-demo-grid" :collapsed="collapsed">
-    <a-grid-item class="demo-item" :offset="1"></a-grid-item>
-    <a-grid-item class="demo-item" :offset="1"></a-grid-item>
-    <a-grid-item class="demo-item" :span="2">
-      <div class="search-container">
-        <a-input 
-          v-model="queryKey"  
-          placeholder="请输入剧名，开启奇妙之旅" 
-          class="input-rounded" 
-          @press-enter="log"
-        />
-        <a-button 
-          type="primary" 
-          class="search-button"
-          @click="log"
-        >
-          <template #icon>
-            <icon-search />
-          </template>
-          搜索
-        </a-button>
-      </div>
-    </a-grid-item>
-  </a-grid>
-<br/>
-  <a-collapse :default-active-key="1" style="width: 98%;margin-left: 1%;">
-    <a-collapse-item header="收藏列表" key="1">
-      <div class="scroll-container">
-        <div class="scroll-wrapper">
-          <a-grid :cols="7" :rowGap="12" :colGap="12" class="grid-demo-grid star-list-grid">
-            <a-grid-item class="demo-item" :span="1" v-for="x in starListEle" :key="x"> 
-              <a-card class="card-demo" size="small">
-                <template #cover>
-                  <div class="card-cover">
-                    <img
-                      :src="x.url"
-                    />
-                  </div>
-                </template>
-                <a-card-meta :title="x.name">
-                </a-card-meta>
-                <a-link :href="`/info?id=${x.tvId}`">进入详情</a-link>
-                <a-link @click="star(x.tvId,x.name,x.url)">
-                  收藏
-                  <template #icon>
-                    <icon-font :type="exists(x.tvId)" :size="15"/>
-                  </template>
-                </a-link>
-              </a-card>
-            </a-grid-item>
-          </a-grid>
-        </div>
-      </div>
-    </a-collapse-item>
-  </a-collapse>
-
-<br>
-  <div class="multi-scroll-container">
-    <div class="multi-scroll-wrapper">
-      <a-grid :cols="6" :rowGap="12" :colGap="12" class="grid-demo-grid search-list-grid">
-        <a-grid-item class="demo-item" :span="1" v-for="(item) in contentData" :key="item.title"> 
-          <a-card 
-            class="card-demo" 
-            :class="{ 'highlight-card': UrlParse(item.url) < 100 }"
-            size="small"
+  <a-spin :loading="loading" tip="搜索中..." style="width: 100%">
+    <br/>
+    <!-- <a-alert type="error">为什么搜索后没有可选集？</a-alert> -->
+    <a-grid :cols="24" :colGap="12" :rowGap="30" class="grid-demo-grid" :collapsed="collapsed">
+      <a-grid-item class="demo-item" :offset="24"></a-grid-item>
+    </a-grid>
+    <br/>
+    <a-grid :cols="3" :colGap="12" :rowGap="30" class="grid-demo-grid" :collapsed="collapsed">
+      <a-grid-item class="demo-item" :offset="1"></a-grid-item>
+      <a-grid-item class="demo-item" :offset="1"></a-grid-item>
+      <a-grid-item class="demo-item" :span="2">
+        <div class="search-container">
+          <a-input 
+            v-model="queryKey"  
+            placeholder="请输入剧名，开启奇妙之旅" 
+            class="input-rounded" 
+            @press-enter="log"
+            :loading="loading"
+          />
+          <a-button 
+            type="primary" 
+            class="search-button"
+            @click="log"
+            :loading="loading"
           >
-            <template #cover>
-              <div class="card-cover">
-                <img :src="item.thumb" />
-              </div>
+            <template #icon>
+              <icon-search />
             </template>
-            <a-card-meta :title="item.title">
-              <template #description>
-                地区：{{item.area}}<br/>
-                连载至：{{item.lianzaijs}}集<br/>
+            搜索
+          </a-button>
+        </div>
+      </a-grid-item>
+    </a-grid>
+  <br/>
+    <a-collapse :default-active-key="1" style="width: 98%;margin-left: 1%;">
+      <a-collapse-item header="收藏列表" key="1">
+        <div class="scroll-container">
+          <div class="scroll-wrapper">
+            <a-grid :cols="7" :rowGap="12" :colGap="12" class="grid-demo-grid star-list-grid">
+              <a-grid-item class="demo-item" :span="1" v-for="x in starListEle" :key="x"> 
+                <a-card class="card-demo" size="small">
+                  <template #cover>
+                    <div class="card-cover">
+                      <img
+                        :src="x.url"
+                      />
+                    </div>
+                  </template>
+                  <a-card-meta :title="x.name">
+                  </a-card-meta>
+                  <a-link :href="`/info?id=${x.tvId}`">进入详情</a-link>
+                  <a-link @click="star(x.tvId,x.name,x.url)">
+                    收藏
+                    <template #icon>
+                      <icon-font :type="exists(x.tvId)" :size="15"/>
+                    </template>
+                  </a-link>
+                </a-card>
+              </a-grid-item>
+            </a-grid>
+          </div>
+        </div>
+      </a-collapse-item>
+    </a-collapse>
+
+  <br>
+    <div class="multi-scroll-container">
+      <div class="multi-scroll-wrapper">
+        <a-grid v-if="contentData && contentData.length > 0" :cols="6" :rowGap="12" :colGap="12" class="grid-demo-grid search-list-grid">
+          <a-grid-item class="demo-item" :span="1" v-for="(item) in contentData" :key="item.title"> 
+            <a-card 
+              class="card-demo" 
+              :class="{ 'highlight-card': UrlParse(item.url) < 100 }"
+              size="small"
+            >
+              <template #cover>
+                <div class="card-cover">
+                  <img :src="item.thumb" />
+                </div>
               </template>
-            </a-card-meta>
-            <a-link :href="`/info?id=${UrlParse(item.url)}`">进入详情</a-link>
-            <a-link @click="star(UrlParse(item.url),item.title,item.thumb)">
-              收藏
-              <template #icon>
-                <icon-font :type="exists(UrlParse(item.url))" :size="15"/>
-              </template>
-            </a-link>
-          </a-card>
-        </a-grid-item>
-      </a-grid>
+              <a-card-meta :title="item.title">
+                <template #description>
+                  地区：{{item.area}}<br/>
+                  连载至：{{item.lianzaijs}}集<br/>
+                </template>
+              </a-card-meta>
+              <a-link :href="`/info?id=${UrlParse(item.url)}`">进入详情</a-link>
+              <a-link @click="star(UrlParse(item.url),item.title,item.thumb)">
+                收藏
+                <template #icon>
+                  <icon-font :type="exists(UrlParse(item.url))" :size="15"/>
+                </template>
+              </a-link>
+            </a-card>
+          </a-grid-item>
+        </a-grid>
+      </div>
     </div>
-  </div>
-  <login :visibleParent="visible"></login>
+    <login :visibleParent="visible"></login>
+  </a-spin>
 </template>
 <style scoped>
 @media screen and (max-width:600px){
@@ -430,6 +434,21 @@
     margin: 0 5%;
   }
 }
+
+/* 添加全局loading样式 */
+:deep(.arco-spin) {
+  width: 100%;
+  min-height: 100vh;
+}
+
+:deep(.arco-spin-loading) {
+  background-color: rgba(255, 255, 255, 0.6);
+}
+
+:deep(.arco-spin-tip) {
+  font-size: 16px;
+  color: var(--color-text-2);
+}
 </style>
 <style lang="css">
 .input-rounded{
@@ -484,6 +503,8 @@ const contentData = ref([])
 const IconFont = Icon.addFromIconFontCn({ src: 'https://at.alicdn.com/t/c/font_4690348_1mxb9zlmcwj.js' });
 const starList = ref([])
 const starListEle = ref([])
+const loading = ref(false);
+
 axios.get(`/video/starList`).then(response => {
   if (response.code === 200){
       response.data.forEach(element => {
@@ -505,25 +526,36 @@ function exists(tvId){
     });
     return b
 }
-function queryVideo(){
-  axios.get(`/video/query?key=${queryKey.value}`).then(queryResponse => {
-      if (queryResponse.code === 7001){
-        proxy.$message.error(queryResponse.msg)
-        return
-      }
-      contentData.value = queryResponse
-      console.log(contentData.value)
-    }).catch(error => {
-       // 请求失败处理
-      console.log(error);
-    });
+
+async function queryVideo(){
+  try {
+    loading.value = true;
+    const queryResponse = await axios.get(`/video/query?key=${queryKey.value}`);
+    if (queryResponse.code === 7001){
+      proxy.$message.error(queryResponse.msg);
+      return;
+    }
+    console.log(queryResponse)
+    if (!queryResponse || queryResponse === "    ") {
+      contentData.value = [];
+      console.log("查询结果为空")
+      return;
+    }
+    contentData.value = queryResponse;
+  } catch (error) {
+    console.log(error);
+    proxy.$message.error('搜索失败，请稍后重试');
+    loading.value = false;
+  } finally {
+    loading.value = false;
+  }
 }
 
-function log() {
+async function log() {
   if (!proxy.$cookies.get("urk")){
-    visible.value +=1
-  }else{
-    queryVideo()
+    visible.value += 1;
+  } else {
+    await queryVideo();
   }
 }
 

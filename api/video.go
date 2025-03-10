@@ -12,9 +12,12 @@ import (
 	systemser "m3u82mp4/model/service/system"
 	"m3u82mp4/model/video"
 	"m3u82mp4/utils"
+	"m3u82mp4/utils/ufile"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -35,7 +38,7 @@ func InitVideoRouter(r *gin.RouterGroup) {
 	api.Api("GET", "/playRecord", api.PlayRecord) // 播放记录
 	api.Api("POST", "/star", api.Star)            // 收藏
 	api.Api("GET", "/starList", api.StarList)     // 收藏列表
-	api.Api("GET", "/download", api.Download)     // 下载
+	api.ApiFile("GET", "/download", api.Download) // 下载
 }
 
 // Query 查询影视信息
@@ -45,21 +48,21 @@ func (v *VideoApi) Query(c *gin.Context) any {
 	if len(key) <= 1 {
 		return errcode.VIDEO_QUERY_KEY_LEN_ERR
 	}
-	v.Logger.Sugar().Info(key)
 	// 将编码后的字符串中的 '%' 替换为 '%25'
 	encodedStr := strings.Replace(url.QueryEscape(consts.VIDEO_URL_SOURCE), "%", "%25", -1)
 	// 第二次 URL 编码
 	doubleEncodedStr := url.QueryEscape(encodedStr)
-
-	resp, err := http.Get(fmt.Sprintf(systemser.GetURL(c), url.QueryEscape(key), doubleEncodedStr))
+	resUrl := fmt.Sprintf(systemser.GetURL(c), url.QueryEscape(key), doubleEncodedStr)
+	v.Logger.Info("video-query-url", zap.String("url", resUrl), zap.Int64("userid", v.User.Id))
+	resp, err := http.Get(resUrl)
 	if err != nil {
-		v.Logger.Sugar().Error(err)
+		v.Logger.Error("video-query-url-获取地址错误", zap.Error(err))
 		return res
 	}
 	defer resp.Body.Close()
 	bytedata, err := io.ReadAll(resp.Body)
 	if err != nil {
-		v.Logger.Sugar().Error(err)
+		v.Logger.Error("video-query-url-解析数据错误", zap.Error(err))
 		return res
 	}
 	return bytedata
@@ -244,13 +247,31 @@ func (v *VideoApi) StarList(c *gin.Context) any {
 // Download 下载视频
 func (v *VideoApi) Download(c *gin.Context) any {
 	var param struct {
-		URL string `json:"url" from:"url"`
+		URL string `json:"url" form:"url"`
 	}
 	c.ShouldBindQuery(&param)
 	if len(param.URL) <= 0 {
 		return errcode.PARAM_ERR
 	}
 	library.Logger.Sugar().Info(param.URL)
-
-	return 1
+	m3u8 := ufile.NewM3U8(param.URL, "", func(node, total int) {
+		// 进度回传
+		progress := strconv.Itoa(node / total)
+		v.Logger.Info("下载进度", zap.String("progress", progress))
+		c.Writer.Write([]byte(progress))
+	})
+	mixed := m3u8.CheckMixed()
+	if mixed != "" {
+		m3u8.SetSourcePath(mixed)
+	}
+	b, targetPath := m3u8.ToMP4()
+	if b {
+		file, err := os.Open(targetPath)
+		if err != nil {
+			v.Logger.Warn("打开mp4文件失败", zap.Error(err))
+		} else {
+			return file
+		}
+	}
+	return errcode.VIDEO_DOWNLOAD_ERR
 }

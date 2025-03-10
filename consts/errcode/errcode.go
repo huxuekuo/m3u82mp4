@@ -6,7 +6,8 @@ type ErrorCode struct {
 }
 
 var (
-	SYS_USER_READ_ERR = ErrorCode{Code: 10001, Msg: "读取用户信息错误,请刷新页面！"}
+	SYS_USER_READ_ERR = ErrorCode{Code: 1001, Msg: "读取用户信息错误,请刷新页面！"}
+	SYS_RETRY         = ErrorCode{Code: 1002, Msg: "系统错误请重试"}
 )
 
 var (
@@ -22,6 +23,7 @@ var (
 
 var (
 	VIDEO_QUERY_KEY_LEN_ERR = ErrorCode{Code: 7001, Msg: "关键词长度要大于1哦~"}
+	VIDEO_DOWNLOAD_ERR      = ErrorCode{Code: 7002, Msg: "请重试，当前下载失败~"}
 )
 
 func DBCustom(err string) ErrorCode {

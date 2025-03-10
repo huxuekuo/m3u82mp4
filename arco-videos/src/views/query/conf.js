@@ -7,7 +7,7 @@ export const conf = {
     width: 600, height: 400, // 视频宽高尺寸
     // url: 'https://svipsvip.ffzy-online5.com/20240907/32249_524e7d08/index.m3u8', // 视频源
     poster: "http://ashuai.work/static/img/avantar.png", // 视频封面
-    autoplay: false, // 是否自动播放，不自动播放，浏览器有限制规则
+    autoplay: true, // 是否自动播放，不自动播放，浏览器有限制规则
     autoplayMuted: false, // 是否自动播放（静音播放）
     videoInit: true, // 是否默认初始化video，默认初始化，默认true
     playsinline: true, // 是否启用内联播放模式，仅移动端生效
@@ -25,9 +25,9 @@ export const conf = {
     progressDot: [
         {
             id: 0,         // 唯一标识，用于删除的时候索引
-            time: 30,      // 展示的时间点，例子为在播放到10s钟的时候展示
-            text: '进度条信息提示...',  // hover的时候展示文案，可以为空
-            duration: 5,   // 展示时间跨度，单位为s
+            time: 480,      // 展示的时间点，例子为在播放到10s钟的时候展示
+            text: '虚假广告，请慎重观看',  // hover的时候展示文案，可以为空
+            duration: 20,   // 展示时间跨度，单位为s
             style: {       // 指定样式
                 backgroundColor: 'pink'
             }
@@ -56,12 +56,18 @@ export const conf = {
     keyboard:{
         playbackRate:2,
     },
+    mobile:{
+        disablePress:false,
+        pressRate:3,
+    },
+    disablePress:false,
+    pressRate:3,
     rotate: false, // 是否使用视频旋转插件，默认不使用
-    download: false, // 是否使用下载按钮，一般不用，一般自定义控制
+    download: true, // 是否使用下载按钮，一般不用，一般自定义控制
     pip: false, // 使用使用画中画模式，默认不用
     mini: false, // 是否使用小屏幕控件
     cssFullscreen: true, // 是否使用网页样式全屏按钮开关
     playbackRate: [0.5, 1, 1.5, 2, 3], //传入倍速可选数组
-    // playbackRate: true, //false，禁用倍速播放（即控制栏不显示）
+    playbackRate: false, //false，禁用倍速播放（即控制栏不显示）
     keyShortcut: false, // 是否开启快捷键模式
 }

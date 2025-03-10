@@ -2,6 +2,7 @@ export default {
   'menu.dashboard.workplace': '工作台',
   'menu.query': '搜索',
   'menu.info': '详情',
+  'menu.config': '配置',
   'workplace.welcome': '欢迎回来！',
   'workplace.balance': '余额（元）',
   'workplace.order.pending': '待支付',

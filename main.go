@@ -12,6 +12,7 @@ import (
 
 func main() {
 	library.Logger, _ = zap.NewProduction()
+	defer library.Logger.Sync()
 	library.InitMysql()
 	r := gin.New()
 	r.Use(middleware.GinLogger(library.Logger), middleware.GinRecovery(library.Logger, true))

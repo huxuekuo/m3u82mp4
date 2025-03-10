@@ -42,6 +42,16 @@ const DASHBOARD: AppRouteRecordRaw = {
         roles: ['*'],
       },
     },
+    {
+      path: '/config',
+      name: 'config',
+      component: () => import('@/views/system/config.vue'),
+      meta: {
+        locale: 'menu.config',
+        requiresAuth: false,
+        roles: ['*'],
+      },
+    },
   ],
 };
 

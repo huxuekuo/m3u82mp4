@@ -2,6 +2,7 @@ export default {
   'menu.dashboard.workplace': 'Workplace',
   'menu.query': 'query',
   'menu.info': 'info',
+  'menu.config': 'config',
   'workplace.welcome': 'Welcome!',
   'workplace.balance': 'Balance (CNY)',
   'workplace.order.pending': 'Pending',

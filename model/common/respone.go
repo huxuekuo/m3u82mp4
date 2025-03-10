@@ -14,6 +14,13 @@ func (r *Respone) OK(data any) *Respone {
 	return r
 }
 
+func (r *Respone) OKM(data any, msg string) *Respone {
+	r.Code = 200
+	r.Data = data
+	r.Msg = msg
+	return r
+}
+
 func (r *Respone) OK2() *Respone {
 	r.Code = 200
 	return r

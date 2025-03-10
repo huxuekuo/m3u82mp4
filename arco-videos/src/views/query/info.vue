@@ -15,7 +15,7 @@
         <a-grid-item class="demo-item"  :offset="1" :span="1">
                 <a-button @click="download()">
                     <template #icon>
-                    <icon-font type="icon-xiazai" :size="26"/>
+                    <icon-font type="icon-xiazai3" :size="26"/>
                 </template> 
             </a-button>
          </a-grid-item>
@@ -51,6 +51,7 @@ import Player,{Events} from 'xgplayer'
 import 'xgplayer/dist/index.min.css'
 import { useRoute } from 'vue-router'
 import HlsPlugin from 'xgplayer-hls'
+import Mobile from 'xgplayer/es/plugins/mobile'
 import { Icon } from '@arco-design/web-vue';
 import axios from 'axios';
 import { conf } from "./conf";
@@ -65,13 +66,13 @@ const playStruct = ref({
 })
 
 let player = null // 实例//
-const IconFont = Icon.addFromIconFontCn({ src: 'https://at.alicdn.com/t/c/font_4690348_fsx088vbdlu.js' });
+const IconFont = Icon.addFromIconFontCn({ src: 'https://at.alicdn.com/t/c/font_4690348_ptsrwy5a1fm.js' });
 const init = (playUrl,startTime2) => {
     player = new Player({
         url:playUrl,
         ...conf,
         startTime:startTime2,
-        plugins: [HlsPlugin]
+        plugins: [HlsPlugin,Mobile]
     });
     player.on(Events.SEEKED, (ev) => {
         axios.get(`/video/playRecord?teleplay=${playStruct.value.teleplay}&index=${playStruct.value.key}&name=${playStruct.value.name}&startTime=${ev.currentTime}`).then(response => {
@@ -96,7 +97,7 @@ const getInfo = (id)=>{
             if (response[key].info.play === "1"){
                 defaultIndex.value = index
             }
-            
+
         })
     }).catch(error => {
         // 请求失败处理
@@ -110,6 +111,9 @@ function download(){
         return
     }
     axios.get(`/video/download?url=${downloadUrl.value}`).then(response => {
+        if(response.code !== 200){
+            proxy.$message.error(response.msg)
+        }
     }).catch(error => {});
 }
 // 播放视频

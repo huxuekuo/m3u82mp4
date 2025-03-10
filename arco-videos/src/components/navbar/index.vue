@@ -22,6 +22,22 @@
     <ul class="right-side">
       <li>
         <a-tooltip
+          content="系统配置"
+        >
+          <a-button
+            class="nav-btn"
+            type="outline"
+            shape="circle"
+            href="config"
+          >
+            <template #icon>
+              <icon-font type="icon-xitong" size="15"/>
+            </template>
+          </a-button>
+        </a-tooltip>
+      </li>
+      <li>
+        <a-tooltip
           :content="
             theme === 'light'
               ? $t('settings.navbar.theme.toDark')
@@ -72,14 +88,14 @@
             <img alt="avatar" :src="avatar" v-if="avatar != ''" />
           </a-avatar>
           <template #content>
-            <!-- <a-doption>
-              <a-space @click="userInfoSettings">
-                <icon-settings />
+            <a-doption>
+              <a-space @click="selfInfo">
+                <icon-export />
                 <span>
-                  {{ $t('messageBox.userSettings') }}
+                  个人信息
                 </span>
               </a-space>
-            </a-doption> -->
+            </a-doption>
             <a-doption>
               <a-space @click="handleLogout">
                 <icon-export />
@@ -101,6 +117,7 @@
   import { computed, ref, inject } from 'vue';
   import { useDark, useToggle, useFullscreen } from '@vueuse/core';
   import { useAppStore, useUserStore,useUserInfoStore } from '@/store';
+  import { Icon } from '@arco-design/web-vue';
   import useUser from '@/hooks/user';
   import Menu from '@/components/menu/index.vue';
   import UserInfo from '../user/userinfo.vue'
@@ -108,6 +125,7 @@
   const appStore = useAppStore();
   const userInfoStore = useUserInfoStore()
   const visibleParent = ref(0)
+  const IconFont = Icon.addFromIconFontCn({ src: 'https://at.alicdn.com/t/c/font_4690348_1mxb9zlmcwj.js' });
   const { logout } = useUser();
   const { isFullscreen, toggle: toggleFullScreen } = useFullscreen();
   const avatar = computed(() => {
@@ -116,6 +134,7 @@
   const theme = computed(() => {
     return appStore.theme;
   });
+
   const topMenu = computed(() => appStore.topMenu && appStore.menu);
   const isDark = useDark({
     selector: 'body',
@@ -134,6 +153,11 @@
   };
   const handleLogout = () => {
     logout();
+  };
+
+  // 个人信息
+  const selfInfo = () => {
+    
   };
 
   function userInfoSettings(){

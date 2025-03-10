@@ -7,6 +7,7 @@ import (
 	"m3u82mp4/library"
 	"m3u82mp4/model/db"
 	"m3u82mp4/utils"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -73,6 +74,26 @@ func (b *BaseApi) ApiByte(httpMethod, relativePath string, h HandleFunc) {
 			return
 		}
 		c.Writer.Write(res.([]byte))
+	})
+}
+
+func (b *BaseApi) ApiFile(httpMethod, relativePath string, h HandleFunc) {
+	b.Handle(httpMethod, relativePath, func(c *gin.Context) {
+		err := b.LoadSysConf(c)
+		if err != nil {
+			c.JSON(200, err)
+			return
+		}
+		res := h(c)
+		if v, ok := res.(errcode.ErrorCode); ok {
+			c.JSON(200, v)
+			return
+		}
+		if res == nil {
+			c.JSON(200, errcode.SYS_RETRY)
+		}
+		file := res.(os.File)
+		file.WriteTo(c.Writer)
 	})
 }
 

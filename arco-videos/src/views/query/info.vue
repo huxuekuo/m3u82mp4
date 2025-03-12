@@ -25,7 +25,7 @@
         <a-tab-pane v-for="(value,key,index) in contentData" v-bind:key="index" >
             <template #title>
                 <icon-font type="icon-bofang" :size="15" v-if="value.info.play == 1"/>{{index+1}}
-              </template>
+            </template>
             <a-grid :cols="8" :colGap="2" :rowGap="20" class="grid-demo-grid" :collapsed="collapsed">
                 <a-grid-item class="demo-item" :span="1" style="display:block;margin:0 auto" v-for="(item) in value.list" v-bind:key="item">
                     <a-button type="dashed" status="success" @click="playerD(item.url,key,item.name,item.startTime)">

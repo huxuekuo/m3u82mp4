@@ -20,7 +20,7 @@
       <Menu v-if="topMenu" />
     </div>
     <ul class="right-side">
-      <li>
+      <!-- <li>
         <a-tooltip
           content="系统配置"
         >
@@ -35,7 +35,7 @@
             </template>
           </a-button>
         </a-tooltip>
-      </li>
+      </li> -->
       <li>
         <a-tooltip
           :content="
@@ -76,6 +76,21 @@
               <icon-fullscreen v-else />
             </template>
           </a-button>
+        </a-tooltip>
+      </li>
+      <li>
+        <a-tooltip content="留言板">
+          <router-link to="/message">
+            <a-button
+              class="nav-btn"
+              type="outline"
+              shape="circle"
+            >
+              <template #icon>
+                <icon-message />
+              </template>
+            </a-button>
+          </router-link>
         </a-tooltip>
       </li>
       <li>

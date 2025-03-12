@@ -21,6 +21,7 @@ export default {
   'menu.faq': 'FAQ',
   'navbar.docs': 'Docs',
   'navbar.action.locale': 'Switch to English',
+  'navbar.message': 'Message Board',
   ...localeSettings,
   ...localeMessageBox,
   ...localeLogin,

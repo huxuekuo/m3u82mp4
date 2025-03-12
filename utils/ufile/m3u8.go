@@ -17,14 +17,18 @@ import (
 	"go.uber.org/zap"
 )
 
+const WorkDir = "/Users/huxuekuo/Downloads/"
+
 type M3U8 struct {
-	sourcePath string
-	targetPath string
-	callBack   func(node, total int)
+	sourcePath  string
+	targetPath  string
+	callBack    func(node, total int)
+	lock        *sync.Mutex
+	nodeProcess int
 }
 
 func NewM3U8(sourcePath, targetPath string, callBack func(node, total int)) *M3U8 {
-	return &M3U8{sourcePath: sourcePath, targetPath: targetPath, callBack: callBack}
+	return &M3U8{sourcePath: sourcePath, targetPath: targetPath, callBack: callBack, lock: &sync.Mutex{}}
 }
 
 func (m *M3U8) SetSourcePath(sourcePath string) {
@@ -65,16 +69,18 @@ func (m M3U8) dowloadFile() (string, string) {
 	}
 	// 创建单文件操作目录
 	optDir := strconv.FormatInt(time.Now().UnixNano(), 10)
+	optDir = WorkDir + optDir
 	err = os.Mkdir(optDir, 0755)
 	if err != nil {
 		library.Logger.Warn("创建工作目录失败", zap.Error(err))
 		return "", ""
 	}
-	defer os.Remove(optDir) // 操作完删除
+
 	tsPath := optDir + "/" + "ts.txt"
 	file, err := os.Create(tsPath)
 	scanner := bufio.NewScanner(resp.Body)
 	tsUrls := []string{}
+	// 匹配ts地址
 	for scanner.Scan() {
 		text := scanner.Text()
 		b, line := matchMode(m.sourcePath, text, file)
@@ -91,11 +97,18 @@ func (m M3U8) dowloadFile() (string, string) {
 		return "", ""
 	}
 	var gogroup sync.WaitGroup
-	sem := make(chan struct{}, 10)
+	sem := make(chan struct{}, 50)
 	for _, url := range tsUrls {
 		gogroup.Add(1)
 		go func(urls string) {
-			defer gogroup.Done()
+			defer func() {
+				m.lock.Lock()
+				m.nodeProcess++
+				m.callBack(m.nodeProcess, len(tsUrls))
+				m.lock.Unlock()
+				gogroup.Done()
+
+			}()
 			sem <- struct{}{}
 			defer func() { <-sem }() // 防止无法释放问题
 			resp, err := http.Get(urls)
@@ -127,7 +140,7 @@ func (m M3U8) ToMP4() (bool, string) {
 		library.Logger.Warn("合并文件失败", zap.Error(err))
 		return false, ""
 	}
-	fmt.Println("合并成功,输出文件为output.mp4")
+	library.Logger.Info("合并成功", zap.String("targetPath", m.targetPath))
 	return true, m.targetPath
 }
 

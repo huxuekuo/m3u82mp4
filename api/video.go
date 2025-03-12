@@ -12,12 +12,10 @@ import (
 	systemser "m3u82mp4/model/service/system"
 	"m3u82mp4/model/video"
 	"m3u82mp4/utils"
-	"m3u82mp4/utils/ufile"
 	"net/http"
 	"net/url"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -65,6 +63,12 @@ func (v *VideoApi) Query(c *gin.Context) any {
 		v.Logger.Error("video-query-url-解析数据错误", zap.Error(err))
 		return res
 	}
+	data := string(bytedata)
+	data = strings.ReplaceAll(data, " ", "")
+	fmt.Println(data)
+	var dataJson []map[string]any
+	json.Unmarshal([]byte(data), &dataJson)
+	fmt.Printf("\n%v", dataJson)
 	return bytedata
 }
 
@@ -254,19 +258,20 @@ func (v *VideoApi) Download(c *gin.Context) any {
 		return errcode.PARAM_ERR
 	}
 	library.Logger.Sugar().Info(param.URL)
-	m3u8 := ufile.NewM3U8(param.URL, "", func(node, total int) {
-		// 进度回传
-		progress := strconv.Itoa(node / total)
-		v.Logger.Info("下载进度", zap.String("progress", progress))
-		c.Writer.Write([]byte(progress))
-	})
-	mixed := m3u8.CheckMixed()
-	if mixed != "" {
-		m3u8.SetSourcePath(mixed)
-	}
-	b, targetPath := m3u8.ToMP4()
-	if b {
-		file, err := os.Open(targetPath)
+	// m3u8 := ufile.NewM3U8(param.URL, "", func(node, total int) {
+	// 	// 进度回传
+	// 	progress := strconv.Itoa((node / total) * 100)
+	// 	v.Logger.Info("下载进度", zap.String("progress", progress))
+	// 	c.Writer.Write([]byte(progress))
+	// })
+
+	// mixed := m3u8.CheckMixed()
+	// if mixed != "" {
+	// 	m3u8.SetSourcePath(mixed)
+	// }
+	// b, targetPath := m3u8.ToMP4()
+	if true {
+		file, err := os.Open("/Users/huxuekuo/Downloads/1741748442442668000/1741748679838553000.mp4")
 		if err != nil {
 			v.Logger.Warn("打开mp4文件失败", zap.Error(err))
 		} else {
@@ -274,4 +279,10 @@ func (v *VideoApi) Download(c *gin.Context) any {
 		}
 	}
 	return errcode.VIDEO_DOWNLOAD_ERR
+}
+
+// MonitorUpdate 监听更新列表
+func (v *VideoApi) MonitorUpdate(c *gin.Context) any {
+
+	return nil
 }

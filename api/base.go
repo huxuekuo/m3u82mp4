@@ -92,7 +92,7 @@ func (b *BaseApi) ApiFile(httpMethod, relativePath string, h HandleFunc) {
 		if res == nil {
 			c.JSON(200, errcode.SYS_RETRY)
 		}
-		file := res.(os.File)
+		file := res.(*os.File)
 		file.WriteTo(c.Writer)
 	})
 }

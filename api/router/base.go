@@ -12,4 +12,5 @@ func InitRouter(r *gin.RouterGroup) {
 	api.InitVideoRouter(r)
 	api.InitUserRouter(r)
 	api.InitSysRouter(r)
+	api.InitMessageRouter(r)
 }

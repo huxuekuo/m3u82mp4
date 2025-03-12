@@ -52,6 +52,16 @@ const DASHBOARD: AppRouteRecordRaw = {
         roles: ['*'],
       },
     },
+    {
+      path: '/message',
+      name: 'message',
+      component: () => import('@/views/system/message.vue'),
+      meta: {
+        locale: 'menu.message',
+        requiresAuth: false,
+        roles: ['*'],
+      },
+    },
   ],
 };
 

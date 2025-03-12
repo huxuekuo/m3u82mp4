@@ -31,3 +31,9 @@ func (r *Respone) Set(e errcode.ErrorCode) *Respone {
 	r.Msg = e.Msg
 	return r
 }
+
+func (r *Respone) Error(message string) *Respone {
+	r.Code = 1002
+	r.Msg = message
+	return r
+}

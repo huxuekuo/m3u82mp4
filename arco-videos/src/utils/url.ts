@@ -2,10 +2,10 @@ export const UrlParse = (
     url:string
 )=>{
     if (url === undefined || url === "") return "";
-    console.log()
     const s =url.match(/\d+/gim)
+    console.log(s)
     if(!s) return "-";
-    return s[0]
+    return s[s.length-1]
 }
 
 export default "-";

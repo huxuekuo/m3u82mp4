@@ -1,11 +1,6 @@
 <template>
   <a-spin :loading="loading" tip="搜索中..." style="width: 100%">
     <br/>
-    <!-- <a-alert type="error">为什么搜索后没有可选集？</a-alert> -->
-    <a-grid :cols="24" :colGap="12" :rowGap="30" class="grid-demo-grid" :collapsed="collapsed">
-      <a-grid-item class="demo-item" :offset="24"></a-grid-item>
-    </a-grid>
-    <br/>
     <a-grid :cols="3" :colGap="12" :rowGap="30" class="grid-demo-grid" :collapsed="collapsed">
       <a-grid-item class="demo-item" :offset="1"></a-grid-item>
       <a-grid-item class="demo-item" :offset="1"></a-grid-item>
@@ -32,8 +27,18 @@
         </div>
       </a-grid-item>
     </a-grid>
+    <a-alert 
+      class="alert-warning"
+      type="error"
+      closable>
+      如果想看的电视、电影为红色边框请重新搜索
+      <div class="feedback-tip">
+      如有反馈请前往<router-link to="/message" class="message-link">留言板</router-link>
+    </div>
+    </a-alert>
+
   <br/>
-    <a-collapse :default-active-key="1" style="width: 98%;margin-left: 1%;">
+    <a-collapse v-model:activeKey="activeKey" :default-active-key="1" style="width: 98%;margin-left: 1%;">
       <a-collapse-item header="收藏列表" key="1">
         <div class="scroll-container">
           <div class="scroll-wrapper">
@@ -101,6 +106,18 @@
   </a-spin>
 </template>
 <style scoped>
+/* 高亮卡片样式 */
+.highlight-card {
+  border: 2px solid #f53f3f !important;
+}
+
+/* 确保提示内容显示 */
+:deep(.arco-alert) {
+  margin: 0 auto;
+  text-align: center;
+  font-size: 16px;
+}
+
 @media screen and (max-width:600px){
   .grid-demo-grid {
     grid-template-columns: repeat(2, 1fr) !important;
@@ -151,6 +168,11 @@
     left: 0;
     width: 90%;
     margin: 0 5%;
+  }
+
+  .alert-warning {
+    width: 90%;
+    left: -6%;
   }
 }
 
@@ -449,6 +471,44 @@
   font-size: 16px;
   color: var(--color-text-2);
 }
+
+.alert-warning {
+  width: 50%;
+  margin: 8px auto;
+  left: -6%;
+  position: relative;
+}
+
+/* 添加反馈提示样式 */
+.feedback-tip {
+  text-align: center;
+  margin: 8px auto;
+  font-size: 14px;
+  color: var(--color-text-2);
+}
+
+.message-link {
+  color: rgb(var(--primary-6));
+  text-decoration: none;
+  transition: all 0.3s ease;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.message-link:hover {
+  color: rgb(var(--primary-7));
+  background-color: rgba(var(--primary-6), 0.1);
+  text-decoration: underline;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 600px) {
+  .feedback-tip {
+    font-size: 12px;
+    margin: 4px auto;
+    width: 90%;
+  }
+}
 </style>
 <style lang="css">
 .input-rounded{
@@ -504,6 +564,7 @@ const IconFont = Icon.addFromIconFontCn({ src: 'https://at.alicdn.com/t/c/font_4
 const starList = ref([])
 const starListEle = ref([])
 const loading = ref(false);
+const activeKey = ref(1);
 
 axios.get(`/video/starList`).then(response => {
   if (response.code === 200){
@@ -555,6 +616,7 @@ async function log() {
   if (!proxy.$cookies.get("urk")){
     visible.value += 1;
   } else {
+    activeKey.value = []; // 收起收藏列表
     await queryVideo();
   }
 }
@@ -587,14 +649,15 @@ function star(pid,pname,purl){
     name:pname,
     url:purl
   }).then(response => {
+    console.log(response)
       // 处理响应数据
-      if (!response.data || response.data.code !== 200){
-        proxy.$message.error(response.data?.msg || '收藏失败');
+      if (response.code !== 200){
+        proxy.$message.error(response?.msg || '收藏失败');
         return;
       }
       
       // 显示成功消息
-      proxy.$message.success(response.data.msg);
+      proxy.$message.success(response.msg);
       
       // 刷新收藏列表
       refreshStarList();
